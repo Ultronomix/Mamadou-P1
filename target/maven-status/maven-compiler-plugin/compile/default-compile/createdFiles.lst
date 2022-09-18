@@ -1,0 +1,7 @@
+com/revature/ers/users/Role.class
+com/revature/ers/users/User.class
+com/revature/ers/auth/Credentials.class
+com/revature/ers/users/UserResponse.class
+com/revature/ers/common/ResourceCreationResponse.class
+com/revature/ers/users/UserDAO.class
+com/revature/ers/auth/AuthService.class
