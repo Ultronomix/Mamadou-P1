@@ -1,7 +1,8 @@
 package com.revature.ers.common;
+public interface Request<T> {
 
-import com.revature.ers.users.User;
-
-public interface Request<U> {
-    User extractEntity();
+    T extractEntity();
 }
+
+
+

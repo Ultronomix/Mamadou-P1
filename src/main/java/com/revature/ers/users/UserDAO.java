@@ -1,164 +1,176 @@
 package com.revature.ers.users;
 
-import com.revature.ers.common.datasource.ConnectionFactory;
-import com.revature.ers.common.exceptions.DataSourceException;
-
-import java.time.LocalDateTime;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import com.revature.ers.common.datasource.ConnectionFactory;
+import com.revature.ers.common.exceptions.DataSourceException;
 
 public class UserDAO {
+    private final String baseSelect = "SELECT EU.user_id, EU.username, EU.email, EU.given_name, EU.surname, EU.is_active, EUR.role " +
+            "FROM ERS_USERS EU " +
+            "JOIN ERS_USER_ROLES EUR " +
+            "ON EU.role_id = EUR.role_id ";
 
-    private static Logger logger = LogManager.getLogger(UserDAO.class);
-
-
-    private final String baseSelect = " Select eu.user_id, eu.username, eu.email, eu.\"password\", eu.given_name, eu.surname, eu.is_active, eu.role_id, eur.role_ " +
-            "FROM project1.ers_users eu " +
-            "JOIN project1.ers_user_roles eur " +
-            "ON eu.role_id = eur.role_id ";
-
-
-    public List<User> getAllUsers() {
-
+    public List<User> allUsers(){
         List<User> allUsers = new ArrayList<>();
 
-        try (Connection conn = ConnectionFactory.getInstance().getConnection()) {
+        try(Connection conn =ConnectionFactory.getInstance().getConnection()){
 
-            // JDBC Statement objects are vulnerable to SQL injection
-            Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery(baseSelect);
+            PreparedStatement pstmt = conn.prepareStatement(baseSelect+ "ORDER BY EU.user_id");
+            ResultSet rs = pstmt.executeQuery();
 
-            allUsers = mapResultSet(rs);
+            allUsers = showUser(rs);
 
-        } catch (SQLException e) {
-            System.err.println("Something went wrong when communicating with the database");
+        }catch(SQLException e){
+            //TODO Log Exception
+            System.out.println("No Connection");
             e.printStackTrace();
         }
 
         return allUsers;
-
     }
+    public Optional<User> getUsername(String usernameImport){
+        String sql = baseSelect + "WHERE EU.username = ?";
 
-    public Optional<User> getUserByUserId(String userId) {
-
-        String sql = baseSelect + " WHERE eu.user_id = ? ";
-
-        try (Connection conn = ConnectionFactory.getInstance().getConnection()) {
-
-            // JDBC Statement objects are vulnerable to SQL injection
+        try(Connection conn = ConnectionFactory.getInstance().getConnection()){
             PreparedStatement pstmt = conn.prepareStatement(sql);
-            pstmt.setObject(1, userId);
+            pstmt.setObject(1, usernameImport);
             ResultSet rs = pstmt.executeQuery();
+            return showUser(rs).stream().findFirst();
 
-            return mapResultSet(rs).stream().findFirst();
-        } catch (SQLException e) {
+        }catch(SQLException e){
+            //TODO Log Exception
             e.printStackTrace();
-            throw new DataSourceException(e);
+            throw new DataSourceException (e);
         }
-
     }
 
-    public Optional<User> getUserByUsername(String username) {
+    public Optional<User> getEmail(String emailImport){
+        String sql = baseSelect + "WHERE EU.email = ?";
 
-        String sql = baseSelect + " WHERE eu.username = ? ";
-
-        try (Connection conn = ConnectionFactory.getInstance().getConnection()) {
-
-            // JDBC Statement objects are vulnerable to SQL injection
+        try(Connection conn = ConnectionFactory.getInstance().getConnection()){
             PreparedStatement pstmt = conn.prepareStatement(sql);
-            pstmt.setString(1, username);
+            pstmt.setObject(1, emailImport);
             ResultSet rs = pstmt.executeQuery();
-            return mapResultSet(rs).stream().findFirst();
+            return showUser(rs).stream().findFirst();
 
-        } catch (SQLException e) {
-            // TODO log this exception
-            throw new DataSourceException(e);
-        }
-
-    }
-
-
-    public Optional<User> getUserByEmail(String email) {
-
-        String sql = baseSelect + " WHERE eu.email = ? ";
-
-        try (Connection conn = ConnectionFactory.getInstance().getConnection()) {
-
-            // JDBC Statement objects are vulnerable to SQL injection
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-            pstmt.setString(1, email);
-            ResultSet rs = pstmt.executeQuery();
-            return mapResultSet(rs).stream().findFirst();
-
-        } catch (SQLException e) {
+        }catch(SQLException e){
+            //TODO Log Exception
             e.printStackTrace();
-            throw new DataSourceException(e);
+            throw new DataSourceException (e);
         }
     }
 
-    public Optional<User> getUserByRole(String role) {
+    public Optional<User> newUser(NewUserRequest userImport){
+        String sql = "INSERT INTO ERS_USERS (username, email, password, given_name, surname, role_id) "+
+                "VALUES (?, ?, ?, ?, ?, ?) ";
 
-        String sql = baseSelect + " WHERE eu.role_id = ? ";
+        try(Connection conn = ConnectionFactory.getInstance().getConnection()){
 
-        try (Connection conn = ConnectionFactory.getInstance().getConnection()) {
+            if(userImport.getRole().equalsIgnoreCase("admin")){
+                userImport.setRole("1");
+            }
+            if(userImport.getRole().equalsIgnoreCase("finance manager")){
+                userImport.setRole("2");
+            }
+            if(userImport.getRole().equalsIgnoreCase("employee")){
+                userImport.setRole("3");
+            }
 
-            // JDBC Statement objects are vulnerable to SQL injection
             PreparedStatement pstmt = conn.prepareStatement(sql);
-            pstmt.setString(1, role);
+            pstmt.setString(1, userImport.getUsername());
+            pstmt.setString(2, userImport.getEmail());
+            pstmt.setString(3, userImport.getPassword());
+            pstmt.setString(4, userImport.getGivenName());
+            pstmt.setString(5, userImport.getSurname());
+            pstmt.setString(6, userImport.getRole());
+            pstmt.executeUpdate();
+
+            //prepping query to confirm update
+            sql = baseSelect +
+                    "WHERE EU.username = ?";
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setObject(1, userImport.getUsername());
             ResultSet rs = pstmt.executeQuery();
-            return mapResultSet(rs).stream().findFirst();
+            return showUser(rs).stream().findFirst();
 
-        } catch (SQLException e) {
+        }catch(SQLException e){
+            //TODO add error log per 9/9
             e.printStackTrace();
-            throw new DataSourceException(e);
+            throw new DataSourceException (e);
         }
+    }//end of createUser method
 
-    }
+    public boolean isUsernameTaken(String usernameImport){
+        return getUsername(usernameImport).isPresent();
+    }//end isUsernameFree method
 
+    public boolean isEmailTaken(String emailImport){
+        return getEmail(emailImport).isPresent();
+    }//end isUsernameFree method
 
-    public Optional<User> findUserByUsernameAndPassword(String username, String password) {
+    public Optional<User> findUserByUsernameAndPassword(String usernameImport, String passwordImport){
+        String sql = baseSelect + "WHERE EU.username = ? AND EU.password = ?";
 
-        String sql = baseSelect + " WHERE eu.username = ? AND eu.password = ? ";
-
-        try (Connection conn = ConnectionFactory.getInstance().getConnection()) {
-
-            // JDBC Statement objects are vulnerable to SQL injection
+        try(Connection conn = ConnectionFactory.getInstance().getConnection()){
             PreparedStatement pstmt = conn.prepareStatement(sql);
-            pstmt.setString(1, username);
-            pstmt.setString(2, password);
+            pstmt.setString(1, usernameImport);
+            pstmt.setString(2, passwordImport);
             ResultSet rs = pstmt.executeQuery();
-            return mapResultSet(rs).stream().findFirst();
+            return showUser(rs).stream().findFirst();
 
-        } catch (SQLException e) {
+        }catch(SQLException e){
+            //TODO Log Exception
             e.printStackTrace();
-            throw new DataSourceException(e);
+            throw new DataSourceException (e);
+        }
+    }//end findByUsernameAndPassword method
+
+    public Optional<User> deactivateUser(String usernameImport){
+        String sql = "UPDATE ers_users SET is_active = false WHERE username = ?";
+        try(Connection conn = ConnectionFactory.getInstance().getConnection()){
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setObject(1, usernameImport);
+            pstmt.executeUpdate();
+
+            //prepping query to confirm update
+            sql = baseSelect +
+                    "WHERE EU.username = ?";
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setObject(1, usernameImport);
+            ResultSet rs = pstmt.executeQuery();
+            return showUser(rs).stream().findFirst();
+
+        }catch(SQLException e){
+            e.printStackTrace();
+            throw new DataSourceException (e);
         }
 
     }
-
-
-
-    private List<User> mapResultSet(ResultSet rs) throws SQLException {
+    private List<User> showUser(ResultSet rs) throws SQLException{
         List<User> users = new ArrayList<>();
-        while (rs.next()) {
+
+        while(rs.next()){
             User user = new User();
-            user.setUserId(rs.getString("user_id"));
+            user.setUserID(rs.getInt("user_id"));
+            user.setUsername(rs.getString("username"));
+            user.setEmail(rs.getString("email"));
+            user.setPassword("********");
             user.setGivenName(rs.getString("given_name"));
             user.setSurname(rs.getString("surname"));
-            user.setEmail(rs.getString("email"));
-            user.setUsername(rs.getString("username"));
-            user.setPassword(rs.getString("password")); // done for security purposes
-            user.setRoleId(rs.getString("role_"));
+            user.setIsActive(rs.getBoolean("is_active"));
+            user.setRole(rs.getString("role"));
             users.add(user);
         }
         return users;
@@ -232,84 +244,11 @@ public class UserDAO {
             File logFile = new File("logs/app.log");
             logFile.createNewFile();
             BufferedWriter logWriter = new BufferedWriter(new FileWriter(logFile));
-            logWriter.write(String.format("[%s] at %s logged: [%s] %s\n", Thread.currentThread().getName(), LocalDate.now(), level.toUpperCase(), message));
-            logWriter.flush();
-        } catch (IOException e) {
+            logWriter.write(String.format("[%s] at %s logged: [%s] %s\n",
+                    Thread.currentThread().getName(), LocalDate.now(), level.toUpperCase(), message));
+        }catch(IOException e){
+
             throw new RuntimeException(e);
         }
-    }
-    public String register(User user) {
-
-        String sql = " INSERT INTO project1.ers_users (user_id, username, given_name, surname, email, \"password\", is_active, role_id) " +
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?) ";
-
-        try (Connection conn = ConnectionFactory.getInstance().getConnection()) {
-
-            PreparedStatement pstmt = conn.prepareStatement(sql, new String[]{"user_id"});
-            pstmt.setString(1, user.getUserId());
-            pstmt.setString(2, user.getUsername());
-            pstmt.setString(3, user.getGivenName());
-            pstmt.setString(4, user.getSurname());
-            pstmt.setString(5, user.getEmail());
-            pstmt.setString(6, user.getPassword());
-            pstmt.setBoolean(7, user.getIsActive());
-            pstmt.setString(8, user.getRoleId());
-
-            pstmt.executeUpdate();
-
-            ResultSet rs = pstmt.getGeneratedKeys();
-            rs.next();
-            user.setUserId(rs.getString("user_id"));
-
-        } catch (SQLException e) {
-            log("ERROR", e.getMessage());
-        }
-
-        log("INFO", "Successfully persisted new user with id: " + user.getUserId());
-
-        return user.getUserId();
-
-    }
-
-    public boolean isUsernameTaken (String username){
-        return getUserByUsername(username).isPresent();
-    }
-
-    public boolean isEmailTaken (String email) {
-        return getUserByEmail(email).isPresent();
-    }
-
-
-    public void updateUser(User user) {
-
-
-        String sql = "UPDATE project1.ers_users " +
-                " SET user_id = ?, username = ?, email = ?, given_name = ?, surname = ?, \"password\" = ?, role_id = ? " +
-                " WHERE project1.ers_users.role_id = ? ";
-
-        try(Connection conn = ConnectionFactory.getInstance().getConnection()) {
-
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-            pstmt.setString(1, user.getUserId());
-            pstmt.setString(2, user.getUsername());
-            pstmt.setString(3, user.getEmail());
-            pstmt.setString(4, user.getGivenName());
-            pstmt.setString(5, user.getSurname());
-            pstmt.setString(6, user.getPassword());
-            pstmt.setString(7, user.getRoleId());
-            pstmt.setString(8, user.getRoleId());
-
-            ResultSet rs = pstmt.getGeneratedKeys();
-
-
-            int rowsUpdated = pstmt.executeUpdate();
-            System.out.println("# of rows updated: " + rowsUpdated);
-
-        } catch(SQLException e) {
-            e.printStackTrace();
-            logger.warn("unable to persist data at {}, error messages {}" , LocalDateTime.now(), e.getMessage());
-        }
-
-
     }
 }

@@ -2,37 +2,16 @@ package com.revature.ers.users;
 
 import com.revature.ers.common.Request;
 
-public class NewUserRequest implements Request<User> {
+public class NewUserRequest implements Request<User>{
 
-    private String userId;
-    private String username;
-    private String email;
-
-    private String password;
     private String givenName;
     private String surname;
+    private String email;
+    private String username;
+    private String password;
+    private String role;
 
-    private boolean isActive;
-
-    private Role roleId;
-
-
-    public String getUserId() {
-        return userId;
-    }
-
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
+    //getters and setters
     public String getGivenName() {
         return givenName;
     }
@@ -57,6 +36,14 @@ public class NewUserRequest implements Request<User> {
         this.email = email;
     }
 
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
     public String getPassword() {
         return password;
     }
@@ -65,49 +52,34 @@ public class NewUserRequest implements Request<User> {
         this.password = password;
     }
 
-    public boolean isActive() {
-        return isActive;
+    public String getRole() {
+        return role;
     }
 
-    public void setActive(boolean active) {
-        isActive = active;
-    }
-
-    public Role getRoleId() {
-        return roleId;
-    }
-
-    public void setRole(Role roleId) {
-        this.roleId = roleId;
+    public void setRole(String role) {
+        this.role = role;
     }
 
     @Override
     public String toString() {
-        return "NewUserRequest{" +
-                "user_id='" + userId + '\'' +
-                ", username='" + username + '\'' +
-                ", givenName='" + givenName + '\'' +
-                ", surname='" + surname + '\'' +
-                ", email='" + email + '\'' +
-                ", password='" + password + '\'' +
-                ", isActive=" + isActive +
-                ", role=" + roleId +
-                '}';
+        return "NewUserInsertion{ " +
+                "givenName=" + givenName +
+                ", \nsurname=" + surname +
+                ", \nemail=" + email +
+                ", \nusername=" + username +
+                ", \npassword=" + password + '}';
     }
 
     @Override
-    public User extractEntity() {
+    public User extractEntity(){
         User extractedEntity = new User();
-        extractedEntity.setUserId(this.userId);
-        extractedEntity.setUsername(this.username);
-        extractedEntity.setEmail(this.email);
-        extractedEntity.setPassword(this.password);
         extractedEntity.setGivenName(this.givenName);
         extractedEntity.setSurname(this.surname);
-        extractedEntity.setIsActive((this.isActive));
-        extractedEntity.setRoleId(String.valueOf((this.roleId)));
+        extractedEntity.setEmail(this.email);
+        extractedEntity.setUsername(this.username);
+        extractedEntity.setPassword(this.password);
+        extractedEntity.setRole(this.role);
+
         return extractedEntity;
     }
-
-
 }

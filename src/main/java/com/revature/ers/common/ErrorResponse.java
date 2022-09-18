@@ -4,47 +4,44 @@ import java.time.LocalDateTime;
 
 public class ErrorResponse {
 
-    private int statusCode;
-    private String message;
-    private String timestamp;
+    private int errorCode;
+    private String errorMessage;
+    private String errorTime;
 
-    public ErrorResponse(int statusCode, String message) {
-        this.statusCode = statusCode;
-        this.message = message;
-        this.timestamp = LocalDateTime.now().toString();
+    public ErrorResponse(int importCode, String importMessage){
+        this.errorCode = importCode;
+        this.errorMessage = importMessage;
+        this.errorTime = LocalDateTime.now().toString();
     }
 
-    public int getStatusCode() {
-        return statusCode;
+    public int getErrorCode() {
+        return errorCode;
     }
 
-    public void setStatusCode(int statusCode) {
-        this.statusCode = statusCode;
+    public void setErrorCode(int errorCode) {
+        this.errorCode = errorCode;
     }
 
-    public String getMessage() {
-        return message;
+    public String getErrorMessage() {
+        return errorMessage;
     }
 
-    public void setMessage(String message) {
-        this.message = message;
+    public void setErrorMessage(String errorMessage) {
+        this.errorMessage = errorMessage;
     }
 
-    public String getTimestamp() {
-        return timestamp;
+    public String getErrorTime() {
+        return errorTime;
     }
 
-    public void setTimestamp(String timestamp) {
-        this.timestamp = timestamp;
+    public void setErrorTime(String errorTime) {
+        this.errorTime = errorTime;
     }
 
     @Override
     public String toString() {
-        return "ErrorResponse{" +
-                "statusCode=" + statusCode +
-                ", message='" + message + '\'' +
-                ", timestamp='" + timestamp + '\'' +
-                '}';
+        return "ErrorReport{ errorCode: " + errorCode +
+                "\nerrorMessage: " + errorMessage +
+                "\nerrorTime: " + errorTime + '}';
     }
-
 }

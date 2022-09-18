@@ -1,7 +1,9 @@
 package com.revature.ers.common.exceptions;
 
 public class AuthenticationException extends RuntimeException {
+
     public AuthenticationException() {
-        super("Could not find a user account with the provided credentials!");
+        //logged at Servlet level
+        super("No user account with the provided credentials!");
     }
 }

@@ -3,39 +3,37 @@ package com.revature.ers.users;
 import java.io.Serializable;
 import java.util.Objects;
 
-// Example of a response DTO
 public class UserResponse implements Serializable {
 
-    private String userId;
+    private int userID;
     private String username;
     private String email;
-
-    private String password;
     private String givenName;
     private String surname;
-
+    private String role;
     private boolean isActive;
 
-    private String roleId;
+    public UserResponse(){
+        super();
+    }
 
-    public UserResponse(User subject) {
-        this.userId = subject.getUserId();
+    public UserResponse(User subject){
+
+        this.userID = subject.getUserID();
         this.username = subject.getUsername();
         this.email = subject.getEmail();
-        this.password = subject.getPassword();
         this.givenName = subject.getGivenName();
         this.surname = subject.getSurname();
+        this.role = subject.getRole();
         this.isActive = subject.getIsActive();
-        this.roleId = subject.getRoleId();
-
     }
 
-    public String getUserId() {
-        return userId;
+    public int getUserID() {
+        return userID;
     }
 
-    public void setUserId(String UserId) {
-        this.userId = userId;
+    public void setUserID(int userID) {
+        this.userID = userID;
     }
 
     public String getUsername() {
@@ -54,8 +52,8 @@ public class UserResponse implements Serializable {
         this.email = email;
     }
 
-    public String getPassword() {
-        return password;
+    public String getGivenName() {
+        return givenName;
     }
 
     public void setGivenName(String givenName) {
@@ -70,46 +68,83 @@ public class UserResponse implements Serializable {
         this.surname = surname;
     }
 
-    public boolean isActive() {
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+
+    public boolean getActive() {
         return isActive;
     }
 
-    public void setIsActive(boolean isActive) {
-        this.isActive = isActive;
-    }
-    public String getRoleId() {
-        return roleId;
+    public void setActive(boolean active) {
+        this.isActive = active;
     }
 
-    public void setRoleId(String roleId) {
-        this.roleId = roleId;
-    }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        UserResponse that = (UserResponse) o;
-        return Objects.equals(userId, that.userId) && Objects.equals(username, that.username) &&  Objects.equals(email, that.email) && Objects.equals(password, that.password) && Objects.equals(givenName, that.givenName) && Objects.equals(surname, that.surname) && Objects.equals(isActive, that.isActive) &&  Objects.equals(roleId, that.roleId);
+    public String toString() {
+        return "UserDTO{"+
+                "\nuserID= "+userID+
+                ", \nusername= " + username +
+                ", \nemail= " + email +
+                ", \ngivenName= " + givenName +
+                ", \nsurname= " + surname +
+                ", \nrole= " + role +
+                ", \nactive= " + isActive +
+                '}';
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(userId, username, email, password, givenName, surname, isActive, roleId);
+        int hash = 7;
+        hash = 13 * hash + Objects.hashCode(this.userID);
+        hash = 13 * hash + Objects.hashCode(this.username);
+        hash = 13 * hash + Objects.hashCode(this.email);
+        hash = 13 * hash + Objects.hashCode(this.givenName);
+        hash = 13 * hash + Objects.hashCode(this.surname);
+        hash = 13 * hash + Objects.hashCode(this.role);
+        hash = 13 * hash + Objects.hashCode(this.isActive);
+        return hash;
     }
 
     @Override
-    public String toString() {
-        return "UserResponse{" +
-                "id='" + userId + '\'' +
-                ", username='" + username + '\'' +
-                ", email='" + email + '\'' +
-                ", password='" + password + '\'' +
-                ", givenName='" + givenName + '\'' +
-                ", surname='" + surname + '\'' +
-                ", isActive='" + isActive + '\'' +
-                ", roleId='" + roleId + '\'' +
-                '}';
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final UserResponse other = (UserResponse) obj;
+        if (!Objects.equals(this.userID, other.userID)) {
+            return false;
+        }
+        if (!Objects.equals(this.username, other.username)) {
+            return false;
+        }
+        if (!Objects.equals(this.email, other.email)) {
+            return false;
+        }
+        if (!Objects.equals(this.givenName, other.givenName)) {
+            return false;
+        }
+        if (!Objects.equals(this.surname, other.surname)) {
+            return false;
+        }
+        if (!Objects.equals(this.role, other.role)) {
+            return false;
+        }
+        if (!Objects.equals(this.isActive, other.isActive)) {
+            return false;
+        }
+        return true;
     }
 
 }

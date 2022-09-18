@@ -2,49 +2,37 @@ package com.revature.ers.users;
 
 import java.util.Objects;
 
-// POJO = Plain Ol' Java Objects
 public class User {
-
-    private String userId;
+    private int userID;
     private String username;
     private String email;
     private String password;
     private String givenName;
     private String surname;
-
     private boolean isActive;
-    private String roleId;
+    private String role;
 
     public User() {
         super();
     }
 
-    public User(String Userid, String username, String email, String password, String givenName, String surname, boolean isActive , String roleId) {
-        this.userId = userId;
+    public User(int userID, String username, String email, String password, String givenName, String surname, boolean isActive, String role) {
+        this.userID = userID;
         this.username = username;
         this.email = email;
         this.password = password;
         this.givenName = givenName;
         this.surname = surname;
         this.isActive = isActive;
-        this.roleId = roleId;
-
+        this.role = role;
     }
 
-    public String getUserId() {
-        return userId;
+    public int getUserID() {
+        return userID;
     }
 
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
+    public void setUserID(int userID) {
+        this.userID = userID;
     }
 
     public String getUsername() {
@@ -53,6 +41,14 @@ public class User {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public String getPassword() {
@@ -83,43 +79,15 @@ public class User {
         return isActive;
     }
 
-    public boolean setIsActive(boolean isActive){
-        return isActive;
+    public void setIsActive(boolean isActive) {
+        this.isActive = isActive;
     }
 
-    public String getRoleId() {
-        return roleId;
+    public String getRole() {
+        return role;
     }
 
-    public void setRoleId(String roleId) {
-        this.roleId = roleId;
+    public void setRole(String roleID) {
+        this.role = roleID;
     }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        User user = (User) o;
-        return Objects.equals(userId, user.userId) &&  Objects.equals(username, user.username) && Objects.equals(email, user.email)  && Objects.equals(password, user.password)&& Objects.equals(givenName, user.givenName) && Objects.equals(surname, user.surname)   && Objects.equals(isActive, user.isActive) &&  Objects.equals(roleId, user.roleId);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(userId, username, email, password, givenName, surname, isActive, roleId);
-    }
-
-    @Override
-    public String toString() {
-        return "User{" +
-                "userId='" + userId + '\'' +
-                ", username='" + username + '\'' +
-                ", email='" + email + '\'' +
-                ", password='" + password + '\'' +
-                ", givenName='" + givenName + '\'' +
-                ", surname='" + surname + '\'' +
-                ", isActive='" + isActive + '\'' +
-                ", roleId=" + roleId +
-                '}';
-    }
-
 }

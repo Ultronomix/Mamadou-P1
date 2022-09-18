@@ -19,7 +19,7 @@ public class AuthServiceTest {
             throw new InvalidRequestException("The provided credentials object was found to be null.");
         }
 
-        if (credentials.getUsername().length() < 4) {
+        if (credentials.getUserID().length() < 4) {
             throw new InvalidRequestException("The provided username was not the correct length (must be at least 4 characters).");
         }
 
@@ -27,7 +27,7 @@ public class AuthServiceTest {
             throw new InvalidRequestException("The provided password was not the correct length (must be at least 8 characters).");
         }
 
-        return userDAO.findUserByUsernameAndPassword(credentials.getUsername(), credentials.getPassword())
+        return userDAO.findUserByUsernameAndPassword(credentials.getUserID(), credentials.getPassword())
                 .map(UserResponse::new)
                 .orElseThrow(AuthenticationException::new);
 

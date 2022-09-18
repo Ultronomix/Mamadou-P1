@@ -6,30 +6,30 @@ import com.revature.ers.users.UserDAO;
 import com.revature.ers.users.UserResponse;
 
 public class AuthService {
-
     private final UserDAO userDAO;
 
     public AuthService(UserDAO userDAO) {
         this.userDAO = userDAO;
     }
 
-    public UserResponse authenticate(Credentials credentials) {
+    //TODO impliment
 
-        if (credentials == null) {
-            throw new InvalidRequestException("The provided credentials object was found to be null.");
+    public UserResponse authenticate(Credentials credImport){
+        if(credImport == null){
+            //will be logged at Servlet level
+            throw new InvalidRequestException("Credentials empty");
+        }
+        if(credImport.getUserID() == null || credImport.getUserID().length() == 0){
+            //will be logged at Servlet level
+            throw new InvalidRequestException("Username found to be empty/null");
+        }
+        if(credImport.getPassword() == null || credImport.getPassword().length() == 0){
+            //will be logged at Servlet level
+            throw new InvalidRequestException("Password found to be empty/null");
         }
 
-        if (credentials.getUsername().length() < 4) {
-            throw new InvalidRequestException("The provided username was not the correct length (must be at least 4 characters).");
-        }
-
-        if (credentials.getPassword().length() < 8) {
-            throw new InvalidRequestException("The provided password was not the correct length (must be at least 8 characters).");
-        }
-
-        return userDAO.findUserByUsernameAndPassword(credentials.getUsername(), credentials.getPassword())
+        return userDAO.findUserByUsernameAndPassword(credImport.getUserID(), credImport.getPassword())
                 .map(UserResponse::new)
                 .orElseThrow(AuthenticationException::new);
-
     }
 }

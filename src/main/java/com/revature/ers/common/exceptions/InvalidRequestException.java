@@ -1,13 +1,11 @@
 package com.revature.ers.common.exceptions;
 
-public class InvalidRequestException extends RuntimeException {
+public class InvalidRequestException extends RuntimeException{
+    public InvalidRequestException(){
+        super("ERROR: Request is Invalid");
+    }
 
-    public InvalidRequestException(String message) {
+    public InvalidRequestException(String message){
         super(message);
     }
-
-    public InvalidRequestException() {
-        super("Invalid request data provided!");
-    }
-
 }
