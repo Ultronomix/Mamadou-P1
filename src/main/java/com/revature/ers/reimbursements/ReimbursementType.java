@@ -2,13 +2,13 @@ package com.revature.ers.reimbursements;
 
 import java.util.Objects;
 
-public class ReimbursementStatus {
+public class ReimbursementType {
     private String reimbursementId;
     private String name;
 
-    public ReimbursementStatus(String id, String status) {
+    public ReimbursementType(String id, String type) {
         this.reimbursementId = id;
-        this.name = status;
+        this.name = type;
     }
 
     public String getReimbursementId() {
@@ -28,7 +28,7 @@ public class ReimbursementStatus {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        ReimbursementStatus role1 = (ReimbursementStatus) o;
+        ReimbursementType role1 = (ReimbursementType) o;
         return Objects.equals(reimbursementId, role1.reimbursementId) && Objects.equals(name, role1.name);
     }
 
@@ -39,10 +39,10 @@ public class ReimbursementStatus {
 
     @Override
     public String toString() {
-        return "Status{" +
+        return "Type{" +
                 "id='" + reimbursementId + '\'' +
-                ", status='" + name + '\'' +
+                ", type='" + name + '\'' +
                 '}';
     }
-}
 
+}

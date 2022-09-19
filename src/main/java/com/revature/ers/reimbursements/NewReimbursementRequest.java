@@ -2,29 +2,35 @@ package com.revature.ers.reimbursements;
 
 import com.revature.ers.common.Request;
 
-public class NewReimbursementRequest implements Request<Reimbursements> {
+import java.util.UUID;
 
-    private double amount;
-    private String timeSub;
+public class NewReimbursementRequest implements Request<Reimbursement> {
+    private int amount;
+    private String submitted;
+
+    private String resolved;
     private String description;
-    private int authorID;
-    private String statusID;
-    private String typeID;
+    private String paymentId;
+    private String authorId;
 
-    public double getAmount() {
+    private String resolver_id;
+    private ReimbursementStatus status;
+    private ReimbursementType type;
+
+    public int getAmount() {
         return amount;
     }
 
-    public void setAmount(double amount) {
+    public void setAmount(int amount) {
         this.amount = amount;
     }
 
-    public String getTimeSub() {
-        return timeSub;
+    public String getSubmitted() {
+        return submitted;
     }
 
-    public void setTimeSub(String timeSub) {
-        this.timeSub = timeSub;
+    public void setSubmitted(String submitted) {
+        this.submitted = submitted;
     }
 
     public String getDescription() {
@@ -35,53 +41,61 @@ public class NewReimbursementRequest implements Request<Reimbursements> {
         this.description = description;
     }
 
-    public int getAuthorID() {
-        return authorID;
+    public String getPaymentId() {
+        return paymentId;
     }
 
-    public void setAuthorID(int authorID) {
-        this.authorID = authorID;
+    public void setPaymentId(String paymentId) {
+        this.paymentId = paymentId;
     }
 
-    public String getStatusID() {
-        return statusID;
+    public String getAuthorId() {
+        return authorId;
     }
 
-    public void setStatusID(String statusID) {
-        this.statusID = statusID;
+    public void setAuthorId(String authorId) {
+        this.authorId = authorId;
     }
 
-    public String getTypeID() {
-        return typeID;
+    public ReimbursementType getType() {
+        return type;
     }
 
-    public void setTypeID(String typeID) {
-        this.typeID = typeID;
+    public void setType(String type_name) {
+        this.type = Reimbursement.getTypeFromName(type_name);
     }
 
+    public ReimbursementStatus getStatus() {
+        return status;
+    }
 
+    public void setStatus(String status_name) {
+        this.status = Reimbursement.getStatusFromName(status_name);
+    }
 
     @Override
     public String toString() {
-        return "NewReimbursementInsertion{" +
-                ", \namount=" + amount +
-                ", \ntimeSub=" + timeSub +
-                ", \ndescription=" + description +
-                ", \nauthorID=" + authorID +
-                ", \nstatusID=" + statusID +
-                ", \ntypeID=" + typeID + '}';
+        return "NewReimbRequest {" +
+                "amount = '" + amount + "' " +
+                "submitted = " + submitted + "' " +
+                "description = '" + description + "' " +
+                "payment_id = '" + paymentId + "' " +
+                "author_id = '" + authorId + "' " +
+                "status = '" + status + "' " +
+                "type = '" + type + "'}";
     }
 
     @Override
-    public Reimbursements extractEntity(){
-        Reimbursements extractedEntity = new Reimbursements();
-        extractedEntity.setAmount(this.amount);
-        extractedEntity.setTimeSub(this.timeSub);
-        extractedEntity.setDescription(this.description);
-        extractedEntity.setCreatorID(this.authorID);
-        extractedEntity.setStatusID(this.statusID);
-        extractedEntity.setTypeID(this.typeID);
-
-        return extractedEntity;
+    public Reimbursement extractEntity() {
+        Reimbursement extractEntity = new Reimbursement();
+        extractEntity.setReimbursementId(UUID.randomUUID().toString());
+        extractEntity.setAmount(this.amount);
+        extractEntity.setSubmitted(this.submitted);
+        extractEntity.setDescription(this.description);
+        extractEntity.setPaymentId(this.paymentId);
+        extractEntity.setAuthorId(this.authorId);
+        extractEntity.setStatus(this.status);
+        extractEntity.setType(this.type);
+        return extractEntity;
     }
 }

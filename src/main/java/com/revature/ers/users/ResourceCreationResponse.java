@@ -1,4 +1,4 @@
-package com.revature.ers.common;
+package com.revature.ers.users;
 
 public class ResourceCreationResponse {
 
@@ -22,4 +22,5 @@ public class ResourceCreationResponse {
                 "resourceId='" + resourceId + '\'' +
                 '}';
     }
+
 }

@@ -1,51 +1,53 @@
 package com.revature.ers;
 
 
-import com.revature.ers.auth.*;
-import com.revature.ers.reimbursements.ReimbursementDAO;
-import com.revature.ers.reimbursements.ReimbursementService;
-import com.revature.ers.reimbursements.ReimbursementServlet;
-import org.apache.catalina.LifecycleException;
-import org.apache.catalina.startup.Tomcat;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.revature.ers.auth.AuthService;
+import com.revature.ers.auth.AuthServlet;
 import com.revature.ers.users.UserDAO;
 import com.revature.ers.users.UserService;
 import com.revature.ers.users.UserServlet;
-
-
+import org.apache.catalina.LifecycleException;
+import org.apache.catalina.startup.Tomcat;
+import com.revature.ers.reimbursements.ReimbursementServlet;
+import com.revature.ers.reimbursements.ReimbursementService;
+import com.revature.ers.reimbursements.ReimbursementDAO;
 public class ErsAppMain {
-    public static void main(String[] args) throws LifecycleException{
+    public static void main(String[] args) throws LifecycleException {
         String docBase = System.getProperty("java.io.tmpdir");
 
-        //Creating webServer
         Tomcat webServer = new Tomcat();
         webServer.setBaseDir(docBase);
-        webServer.setPort(5000); //default is 8080
-        webServer.getConnector(); //formality, connects server requests to application
+        webServer.setPort(8080);
+        webServer.getConnector();
 
-        //Creating Data Access Objects (DAOs)
+
         UserDAO userDAO = new UserDAO();
         ReimbursementDAO reimbursementDAO = new ReimbursementDAO();
+        ReimbursementService reimbService = new ReimbursementService(reimbursementDAO);
+        ReimbursementServlet reimbServlet = new ReimbursementServlet(reimbService);
+        AuthService authService = new AuthService(userDAO);
+        UserService userService = new UserService(userDAO);
+        ObjectMapper jsonMapper = null;
+        UserServlet userServlet = new UserServlet(userService, jsonMapper);
+        AuthServlet authServlet = new AuthServlet(authService, jsonMapper);
+        jsonMapper = new ObjectMapper();
 
-        //Service methods
-        UserService userServ = new UserService(userDAO);
-        AuthService authServ = new AuthService(userDAO);
-        ReimbursementService reimbServ = new ReimbursementService(reimbursementDAO);
 
-        //Connecting Servlets to Service layer
-        UserServlet userSlet = new UserServlet(userServ);
-        AuthServlet authSlet = new AuthServlet(authServ);
-        ReimbursementServlet reimbSlet = new ReimbursementServlet(reimbServ);
-
-        //Connecting Servlets to webServer
-        final String rootContext = "/p1";
+        // Web server context and servlet configurations
+        final String rootContext = "/taskmaster";
         webServer.addContext(rootContext, docBase);
-        webServer.addServlet(rootContext, "UserServlet", userSlet).addMapping("/users");
-        webServer.addServlet(rootContext, "AuthServlet", authSlet).addMapping("/auth");
-        webServer.addServlet(rootContext, "ReimbursementServlet", reimbSlet).addMapping("/reimbursements");
-
-
+        webServer.addServlet(rootContext, "UserServlet", userServlet).addMapping("/users");
+        webServer.addServlet(rootContext, "AuthServlet", authServlet).addMapping("/auth");
+        webServer.addServlet(rootContext, "ReimbServlet", reimbServlet).addMapping("/reimb");
         webServer.start();
         webServer.getServer().await();
-        System.out.println("ERS APP has started!");
     }
 }
+
+
+
+
+
+
+

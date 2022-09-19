@@ -1,254 +1,229 @@
 package com.revature.ers.users;
 
+import com.revature.ers.common.datasource.ConnectionFactory;
+import com.revature.ers.common.exceptions.DataSourceException;
+
+
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+//import java.util.UUID;
 
-import com.revature.ers.common.datasource.ConnectionFactory;
-import com.revature.ers.common.exceptions.DataSourceException;
-
+// DAO = Data Access Object
 public class UserDAO {
-    private final String baseSelect = "SELECT EU.user_id, EU.username, EU.email, EU.given_name, EU.surname, EU.is_active, EUR.role " +
-            "FROM ERS_USERS EU " +
-            "JOIN ERS_USER_ROLES EUR " +
-            "ON EU.role_id = EUR.role_id ";
 
-    public List<User> allUsers(){
+    private final String baseSelect = "SELECT eu.user_id, eu.username, eu.email, eu.password, " +
+            "eu.given_name, eu.surname, " +
+            "eu.is_active, eur.role_id, eur.role " +
+            "FROM ers_users eu " +
+            "JOIN ers_user_roles eur ON eu.role_id = eur.role_id ";
+
+    public List<User> getAllUsers() {
+
+        String sql = baseSelect;
         List<User> allUsers = new ArrayList<>();
 
-        try(Connection conn =ConnectionFactory.getInstance().getConnection()){
+        try (Connection conn = ConnectionFactory.getInstance().getConnection()) {
 
-            PreparedStatement pstmt = conn.prepareStatement(baseSelect+ "ORDER BY EU.user_id");
-            ResultSet rs = pstmt.executeQuery();
+            // JDBC Statement objects are vulnerable to SQL injection
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql);
 
-            allUsers = showUser(rs);
+            allUsers = mapResultSet(rs);
 
-        }catch(SQLException e){
-            //TODO Log Exception
-            System.out.println("No Connection");
+        } catch (SQLException e) {
+            System.err.println("Something went wrong when communicating with the database");
             e.printStackTrace();
         }
 
         return allUsers;
+
     }
-    public Optional<User> getUsername(String usernameImport){
-        String sql = baseSelect + "WHERE EU.username = ?";
 
-        try(Connection conn = ConnectionFactory.getInstance().getConnection()){
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-            pstmt.setObject(1, usernameImport);
-            ResultSet rs = pstmt.executeQuery();
-            return showUser(rs).stream().findFirst();
+    public Optional<User> findUserById( String id) {
 
-        }catch(SQLException e){
-            //TODO Log Exception
+        String sql = baseSelect + "WHERE eu.user_id = ?";
+
+        try (Connection conn = ConnectionFactory.getInstance().getConnection()) {
+
+            // JDBC Statement objects are vulnerable to SQL injection
+            PreparedStatement preparedStatement = conn.prepareStatement(sql);
+            preparedStatement.setString(1, id);
+            ResultSet rs = preparedStatement.executeQuery();
+            return mapResultSet(rs).stream().findFirst();
+
+        } catch (SQLException e) {
             e.printStackTrace();
-            throw new DataSourceException (e);
+            throw new DataSourceException(e);
         }
+
     }
 
-    public Optional<User> getEmail(String emailImport){
-        String sql = baseSelect + "WHERE EU.email = ?";
-
-        try(Connection conn = ConnectionFactory.getInstance().getConnection()){
+    public String save(User user){
+        String sql = "INSERT INTO ers_users (user_id, username, email, password, given_name, surname, is_active, role_id)\n" +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        try (Connection conn = ConnectionFactory.getInstance().getConnection()) {
             PreparedStatement pstmt = conn.prepareStatement(sql);
-            pstmt.setObject(1, emailImport);
-            ResultSet rs = pstmt.executeQuery();
-            return showUser(rs).stream().findFirst();
-
-        }catch(SQLException e){
-            //TODO Log Exception
-            e.printStackTrace();
-            throw new DataSourceException (e);
-        }
-    }
-
-    public Optional<User> newUser(NewUserRequest userImport){
-        String sql = "INSERT INTO ERS_USERS (username, email, password, given_name, surname, role_id) "+
-                "VALUES (?, ?, ?, ?, ?, ?) ";
-
-        try(Connection conn = ConnectionFactory.getInstance().getConnection()){
-
-            if(userImport.getRole().equalsIgnoreCase("admin")){
-                userImport.setRole("1");
-            }
-            if(userImport.getRole().equalsIgnoreCase("finance manager")){
-                userImport.setRole("2");
-            }
-            if(userImport.getRole().equalsIgnoreCase("employee")){
-                userImport.setRole("3");
-            }
-
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-            pstmt.setString(1, userImport.getUsername());
-            pstmt.setString(2, userImport.getEmail());
-            pstmt.setString(3, userImport.getPassword());
-            pstmt.setString(4, userImport.getGivenName());
-            pstmt.setString(5, userImport.getSurname());
-            pstmt.setString(6, userImport.getRole());
+            pstmt.setString(1, user.getUserId().trim());
+            pstmt.setString(2, user.getUsername().trim());
+            pstmt.setString(3, user.getEmail().trim());
+            pstmt.setString(4, user.getPassword().trim());
+            pstmt.setString(5, user.getGivenName().trim());
+            pstmt.setString(6, user.getSurname().trim());
+            pstmt.setBoolean(7, user.getActive());
+            pstmt.setString(8, user.getRole().getRoleId());
             pstmt.executeUpdate();
-
-            //prepping query to confirm update
-            sql = baseSelect +
-                    "WHERE EU.username = ?";
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setObject(1, userImport.getUsername());
-            ResultSet rs = pstmt.executeQuery();
-            return showUser(rs).stream().findFirst();
-
-        }catch(SQLException e){
-            //TODO add error log per 9/9
+        } catch (Exception e) {
             e.printStackTrace();
-            throw new DataSourceException (e);
+            throw new DataSourceException(e);
         }
-    }//end of createUser method
+        return user.getUsername() + " added.";
+    }
 
-    public boolean isUsernameTaken(String usernameImport){
-        return getUsername(usernameImport).isPresent();
-    }//end isUsernameFree method
 
-    public boolean isEmailTaken(String emailImport){
-        return getEmail(emailImport).isPresent();
-    }//end isUsernameFree method
+    public Optional<User> findUserByRole(String role) {
 
-    public Optional<User> findUserByUsernameAndPassword(String usernameImport, String passwordImport){
-        String sql = baseSelect + "WHERE EU.username = ? AND EU.password = ?";
+        String sql = baseSelect + "WHERE eur.role = ?";
 
-        try(Connection conn = ConnectionFactory.getInstance().getConnection()){
+        try (Connection conn = ConnectionFactory.getInstance().getConnection()) {
+
             PreparedStatement pstmt = conn.prepareStatement(sql);
-            pstmt.setString(1, usernameImport);
-            pstmt.setString(2, passwordImport);
+            pstmt.setString(1, role);
             ResultSet rs = pstmt.executeQuery();
-            return showUser(rs).stream().findFirst();
+            return mapResultSet(rs).stream().findFirst();
 
-        }catch(SQLException e){
-            //TODO Log Exception
-            e.printStackTrace();
-            throw new DataSourceException (e);
+        } catch (SQLException e) {
+            throw new DataSourceException(e);
         }
-    }//end findByUsernameAndPassword method
+    }
 
-    public Optional<User> deactivateUser(String usernameImport){
-        String sql = "UPDATE ers_users SET is_active = false WHERE username = ?";
-        try(Connection conn = ConnectionFactory.getInstance().getConnection()){
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-            pstmt.setObject(1, usernameImport);
-            pstmt.executeUpdate();
+    public Optional<User> findUserByUsername(String username) {
 
-            //prepping query to confirm update
-            sql = baseSelect +
-                    "WHERE EU.username = ?";
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setObject(1, usernameImport);
-            ResultSet rs = pstmt.executeQuery();
-            return showUser(rs).stream().findFirst();
+        String sql = baseSelect + "WHERE username = ?";
 
-        }catch(SQLException e){
-            e.printStackTrace();
-            throw new DataSourceException (e);
+        try (Connection conn = ConnectionFactory.getInstance().getConnection()) {
+
+            // JDBC Statement objects are vulnerable to SQL injection
+            PreparedStatement preparedStatement = conn.prepareStatement(sql);
+            preparedStatement.setString(1, username);
+            ResultSet rs = preparedStatement.executeQuery();
+            return mapResultSet(rs).stream().findFirst();
+
+        } catch (SQLException e) {
+
+            throw new DataSourceException(e);
         }
 
     }
-    private List<User> showUser(ResultSet rs) throws SQLException{
+
+    public boolean isUsernameTaken(String username) {
+        return findUserByUsername(username).isPresent();
+    }
+
+    public Optional<User> findUserByEmail(String email) {
+
+        String sql = baseSelect + "WHERE email = ?";
+
+        try (Connection conn = ConnectionFactory.getInstance().getConnection()) {
+
+            // JDBC Statement objects are vulnerable to SQL injection
+            PreparedStatement preparedStatement = conn.prepareStatement(sql);
+            preparedStatement.setString(1, email);
+            ResultSet rs = preparedStatement.executeQuery();
+            return mapResultSet(rs).stream().findFirst();
+
+        } catch (SQLException e) {
+
+            throw new DataSourceException(e);
+        }
+
+    }
+
+    public boolean isEmailTaken(String email) {
+        return findUserByEmail(email).isPresent();
+    }
+
+    public Optional<User> findUserByUsernameAndPassword(String username, String password) {
+
+        String sql = baseSelect + "WHERE eu.username = ? AND eu.password = ?";
+
+        try (Connection conn = ConnectionFactory.getInstance().getConnection()) {
+
+            // JDBC Statement objects are vulnerable to SQL injection
+            PreparedStatement preparedStatement = conn.prepareStatement(sql);
+            preparedStatement.setString(1, username);
+            preparedStatement.setString(2, password);
+            ResultSet rs = preparedStatement.executeQuery();
+            return mapResultSet(rs).stream().findFirst();
+
+        } catch (SQLException e) {
+
+            throw new DataSourceException(e);
+        }
+
+    }
+
+    public String updateUserAttribute(String attrib, String user_id, String new_value) {
+        String sql = "UPDATE ers_users SET " + attrib + " = ? WHERE user_id = ?";
+        try (Connection conn = ConnectionFactory.getInstance().getConnection()) {
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, new_value);
+            pstmt.setString(2, user_id);
+            pstmt.executeUpdate();
+            return "Email Changed"; //TODO change
+        } catch (SQLException e) {
+            //TODO log exception
+            throw new DataSourceException(e);
+        }
+    }
+    public String updateUserAttribute(String attrib, String user_id, Boolean new_value) {
+        String sql = "UPDATE ers_users SET " + attrib + " = ? WHERE user_id = ?";
+        try (Connection conn = ConnectionFactory.getInstance().getConnection()) {
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setBoolean(1, new_value);
+            pstmt.setString(2, user_id);
+            pstmt.executeUpdate();
+            return "Email Changed"; //TODO change
+        } catch (SQLException e) {
+            //TODO log exception
+            throw new DataSourceException(e);
+        }
+    }
+
+    private List<User> mapResultSet(ResultSet rs) throws SQLException {
         List<User> users = new ArrayList<>();
-
-        while(rs.next()){
+        while (rs.next()) {
             User user = new User();
-            user.setUserID(rs.getInt("user_id"));
-            user.setUsername(rs.getString("username"));
-            user.setEmail(rs.getString("email"));
-            user.setPassword("********");
+            user.setUserId(rs.getString("user_id"));
             user.setGivenName(rs.getString("given_name"));
             user.setSurname(rs.getString("surname"));
-            user.setIsActive(rs.getBoolean("is_active"));
-            user.setRole(rs.getString("role"));
+            user.setEmail(rs.getString("email"));
+            user.setUsername(rs.getString("username"));
+            user.setPassword(rs.getString("password"));
+            user.setRole(new Role(rs.getString("role_id"), rs.getString("role")));
             users.add(user);
         }
         return users;
     }
-
-
-    public String updateUserGivenName(String givenName, String userId) {
-        String sql = "UPDATE project1.ers_users " +
-                " SET given_name = ? " +
-                " WHERE user_id = ? " ;
-
-        try (Connection conn = ConnectionFactory.getInstance().getConnection()) {
-
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-
-            pstmt.setString(1, givenName);
-            pstmt.setString(2, userId);
-            ResultSet rs = pstmt.executeQuery();
-
-            return "User first name updated to " + givenName + ", Rows affected = " + rs;
-
-        } catch (SQLException e) {
-            throw new DataSourceException(e);
-        }
-    }
-
-    public String updateUserSurname(String surname, String user_id) {
-        String sql = "UPDATE project1.ers_users " +
-                " SET surname = ? " +
-                " WHERE user_id = ? ";
-
-        try (Connection conn = ConnectionFactory.getInstance().getConnection()) {
-
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-
-            pstmt.setString(1, surname);
-            pstmt.setString(2, user_id);
-            ResultSet rs = pstmt.executeQuery();
-
-            return "User last name updated to " + surname + ", Rows affected = " + rs;
-
-        } catch (SQLException e) {
-            throw new DataSourceException(e);
-        }
-    }
-
-    public String updateUserEmail(String email, String user_id) {
-        String sql = " UPDATE project1.ers_users " +
-                " SET email = ? " +
-                " WHERE user_id = ? ";
-
-        try (Connection conn = ConnectionFactory.getInstance().getConnection()) {
-
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-
-            pstmt.setString(1, email);
-            pstmt.setString(2, user_id);
-
-            ResultSet rs = pstmt.executeQuery();
-
-            return "User email updated to " + email + ", Rows affected = " + rs;
-
-        } catch (SQLException e) {
-            throw new DataSourceException(e);
-        }
-    }  // todo must finish update methods for all columns
-
 
     public void log(String level, String message) {
         try {
             File logFile = new File("logs/app.log");
             logFile.createNewFile();
             BufferedWriter logWriter = new BufferedWriter(new FileWriter(logFile));
-            logWriter.write(String.format("[%s] at %s logged: [%s] %s\n",
-                    Thread.currentThread().getName(), LocalDate.now(), level.toUpperCase(), message));
-        }catch(IOException e){
-
+            logWriter.write(String.format("[%s] at %s logged: [%s] %s\n", Thread.currentThread().getName(), LocalDate.now(), level.toUpperCase(), message));
+            logWriter.flush();
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
+
+
 }

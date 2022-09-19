@@ -1,171 +1,160 @@
 package com.revature.ers.users;
 
+
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.io.IOException;
-import java.util.List;
+import com.revature.ers.common.ErrorResponse;
+import com.revature.ers.common.ResourceCreationResponse;
+import com.revature.ers.common.exceptions.AuthenticationException;
+import com.revature.ers.common.exceptions.DataSourceException;
+import com.revature.ers.common.exceptions.InvalidRequestException;
+import com.revature.ers.common.exceptions.ResourceNotFoundException;
+
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import java.io.IOException;
+import java.util.List;
 
-import com.revature.ers.common.ErrorResponse;
-import com.revature.ers.common.exceptions.ResourceNotFoundException;
-import com.revature.ers.common.exceptions.InvalidRequestException;
-import com.revature.ers.common.exceptions.DataSourceException;
-import com.revature.ers.common.exceptions.ResourcePersistenceException;
+public class UserServlet extends HttpServlet {
+
+    private final UserService userService;
 
 
-public class UserServlet extends HttpServlet{
-
-    private final UserService userServ;
-
-    public UserServlet(UserService importUserServ){
-        this.userServ = importUserServ;
+    public UserServlet(UserService userService, ObjectMapper jsonMapper) {
+        this.userService = userService;
     }
 
-    //doGet:get all users, get single user by username matching session ID
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         ObjectMapper jsonMapper = new ObjectMapper();
         resp.setContentType("application/json");
 
-        //HTTPS session (might not exist)
         HttpSession userSession = req.getSession(false);
-
-        //Confirm user is logged in
-        if(userSession == null){
+        if (userSession == null) {
             resp.setStatus(401);
-            resp.getWriter().write(jsonMapper.writeValueAsString(new ErrorResponse(401, "ERROR 401: Authorization Missing")));
+            resp.getWriter().write(jsonMapper.writeValueAsString(new ErrorResponse(401, "Requester is not authenticated with server, log in")));
             return;
         }
-
-        //Gathering submitted username to be verified for authorization
-        String usernameSubmission = req.getParameter("username");
-
-        //userSession set in AuthenticationServlet which sets "authUser" after someone has logged in
         UserResponse requester = (UserResponse) userSession.getAttribute("authUser");
+        String idToSearchFor = req.getParameter("id");
+        String roleToSearchFor = req.getParameter("role");
+        String usernameToSearchFor = req.getParameter("username");
 
-        //Username verification logic: must either have Role admin
-        //or authUser must match the username of user requested
-        if(!requester.getRole().equals("admin") && !requester.getUsername().equals(usernameSubmission)){
-            resp.setStatus(403);
-            resp.getWriter().write(jsonMapper.writeValueAsString(new ErrorResponse(403, "ERROR 403: Authorization Insufficent to Access")));
-        }else{
-            try{
-                //logic to determine if one user is requested or all users
-                if(usernameSubmission == null){
-                    //list of all UserDTOs pulled from Service Layer
-                    List<UserResponse> allUsers = userServ.getAllUsers();
-                    //Custom Header added
-                    resp.addHeader("Header name", "Header body");
-                    //Translates List to json and sends back to server
-                    resp.getWriter().write(jsonMapper.writeValueAsString(allUsers));
-                }else{
-                    //single UserDTO pulled from Service Layer matching submitted username
-                    UserResponse foundUser = userServ.getUserByUsername(usernameSubmission);
-                    //Translates single UserDTO to json and sends to server
-                    resp.getWriter().write(jsonMapper.writeValueAsString(foundUser));
-                }
-
-            }catch(InvalidRequestException e){
-                //TODO add logging based on 9/9 lecture
-                resp.setStatus(400);
-                resp.getWriter().write(jsonMapper.writeValueAsString(new ErrorResponse(400, e.getMessage())));
-            }catch(ResourceNotFoundException e){
-                //TODO add logging based on 9/9 lecture
-                resp.setStatus(404);
-                resp.getWriter().write(jsonMapper.writeValueAsString(new ErrorResponse(404, e.getMessage())));
-            }catch(DataSourceException e){
-                //TODO add logging based on 9/9 lecture
-                resp.setStatus(500);
-                resp.getWriter().write(jsonMapper.writeValueAsString(new ErrorResponse(500, e.getMessage())));
-            }
+        if (!requester.getRole().equals("ADMIN")) {
+            resp.setStatus(403); // Forbidden
+            resp.getWriter().write(jsonMapper.writeValueAsString(new ErrorResponse(403, "Requester not permitted to communicate with this endpoint.")));
+            return;
         }
-
-    }//end doGet method
-
-    //doPost: create new user
-    @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException{
-        ObjectMapper jsonMapper = new ObjectMapper();
-        resp.setContentType("application/json");
 
         try {
-            //Servlet layer new User creation
-            //userServ.register is passed user to insert, will return with
-            //ResourceCreationDTO to confirm new User was created
-            NewUserRequest requestBody = jsonMapper.readValue(req.getInputStream(), NewUserRequest.class);
-            UserResponse responseBody = userServ.register(requestBody);
-            resp.getWriter().write(jsonMapper.writeValueAsString(responseBody));
-
+            if (idToSearchFor == null) {
+                List<UserResponse> allUsers = userService.getAllUsers();
+                resp.getWriter().write(jsonMapper.writeValueAsString(allUsers));
+            }
+            if (idToSearchFor != null) {
+                UserResponse foundUser = userService.getUserById(idToSearchFor);
+                resp.getWriter().write(jsonMapper.writeValueAsString(foundUser));
+            }
+            if (usernameToSearchFor != null) {
+                UserResponse foundUser = userService.getUserbyUsername(usernameToSearchFor);
+                resp.getWriter().write(jsonMapper.writeValueAsString(foundUser));
+            }
+            if (roleToSearchFor != null) {
+                UserResponse foundUser = userService.getUserByRole(roleToSearchFor);
+                resp.getWriter().write(jsonMapper.writeValueAsString(foundUser));
+            }
         } catch (InvalidRequestException | JsonMappingException e) {
-            //TODO add logging based on 9/9 lecture
-            resp.setStatus(400); // BAD REQUEST
+            resp.setStatus(400); // BAD REQUEST;
             resp.getWriter().write(jsonMapper.writeValueAsString(new ErrorResponse(400, e.getMessage())));
-
-        } catch (ResourcePersistenceException e) {
-            //TODO add logging based on 9/9 lecture
-            resp.setStatus(409); // CONFLICT; indicates that the provided resource could not be saved without conflicting with other data
-            resp.getWriter().write(jsonMapper.writeValueAsString(new ErrorResponse(409, e.getMessage())));
-
+        } catch (ResourceNotFoundException e) {
+            resp.setStatus(404); // NOT FOUND; the sought resource could not be located
+            resp.getWriter().write(jsonMapper.writeValueAsString(new ErrorResponse(404, e.getMessage())));
         } catch (DataSourceException e) {
-            //TODO add logging based on 9/9 lecture
             resp.setStatus(500); // INTERNAL SERVER ERROR; general error indicating a problem with the server
             resp.getWriter().write(jsonMapper.writeValueAsString(new ErrorResponse(500, e.getMessage())));
-
         }
-    }//end doPost method
-
-    //doPut:update existing user(require admin log in)
-    //TODO complete doPut method
-    @Override
-    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException{
-        ObjectMapper jsonMapper = new ObjectMapper();
-        resp.setContentType("application/json");
-
 
     }
 
-    //doDelete:update is_active to false(target by username)
     @Override
-    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException{
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         ObjectMapper jsonMapper = new ObjectMapper();
         resp.setContentType("application/json");
-
-        //HTTPS session (might not exist)
+        // Access the HTTP session
         HttpSession userSession = req.getSession(false);
-
-        //Confirm user is logged in
-        if(userSession == null){
-            resp.setStatus(401);
-            resp.getWriter().write(jsonMapper.writeValueAsString(new ErrorResponse(401, "ERROR 401: Authorization Missing")));
+        // if null, this mean that the requester is not authenticated with server
+        if (userSession == null) {
+            resp.setStatus(401); // Unauthorized
+            resp.getWriter().write(jsonMapper.writeValueAsString(new ErrorResponse(401, "Requester is not authenticated with server, log in.")));
             return;
         }
-
-        //Gathering submitted username to be verified for authorization
-        String usernameSubmission = req.getParameter("username");
-
-        //userSession set in AuthenticationServlet which sets "authUser" after someone has logged in
         UserResponse requester = (UserResponse) userSession.getAttribute("authUser");
-
-        //Username verification logic: must either have Role admin
-        //or authUser must match the username of user requested
-        if(!requester.getRole().equals("admin") && !requester.getUsername().equals(usernameSubmission)){
-            resp.setStatus(403);
-            resp.getWriter().write(jsonMapper.writeValueAsString(new ErrorResponse(403, "ERROR 403: Authorization Insufficent to Access")));
+        // Only ADMIN access
+        if (!requester.getRole().equals("ADMIN")) {
+            resp.setStatus(403); // Forbidden
+            resp.getWriter().write(jsonMapper.writeValueAsString(new ErrorResponse(403, "Requester not permitted to communicate with this endpoint.")));
+            return;
         }
+        try {
+            com.revature.ers.common.ResourceCreationResponse responseBody = userService
+                    .register(jsonMapper.readValue(req.getInputStream(), NewUserRequest.class));
+            resp.getWriter().write(jsonMapper.writeValueAsString(responseBody));
+        } catch (InvalidRequestException | JsonMappingException e) {
+            resp.setStatus(400);// * bad request
+            resp.getWriter().write(jsonMapper.writeValueAsString(new ErrorResponse(400, e.getMessage())));
+        } catch (AuthenticationException e) {
+            resp.setStatus(409); // * conflit; indicates provided resource could not be saved
+            resp.getWriter().write(jsonMapper.writeValueAsString(new ErrorResponse(409, e.getMessage())));
+        } catch (DataSourceException e) {
+            resp.setStatus(500); // * internal error
+            resp.getWriter().write(jsonMapper.writeValueAsString(new ErrorResponse(500, e.getMessage())));
+        }
+    }
 
-        try{
-            UserResponse deactivatedUser = userServ.deactivate(usernameSubmission);
-            //Translates deactivated UserDTO to json and sends to server to show active status as false
-            resp.getWriter().write(jsonMapper.writeValueAsString(deactivatedUser));
-        }catch(DataSourceException e){
-            //TODO add logging based on 9/9 lecture
-            resp.setStatus(500);
+    @Override
+    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        ObjectMapper jsonMapper = new ObjectMapper();
+        resp.setContentType("application/json");
+        // Access the HTTP session
+        HttpSession userSession = req.getSession(false);
+        // if null, this mean that the requester is not authenticated with server
+        if (userSession == null) {
+            resp.setStatus(401); // Unauthorized
+            resp.getWriter().write(jsonMapper.writeValueAsString(new ErrorResponse(401, "Requester is not authenticated with server, log in.")));
+            return;
+        }
+        UserResponse requester = (UserResponse) userSession.getAttribute("authUser");
+        // Only ADMIN access
+        if (!requester.getRole().equals("ADMIN")) {
+            resp.setStatus(403); // Forbidden
+            resp.getWriter().write(jsonMapper.writeValueAsString(new ErrorResponse(403, "Requester not permitted to communicate with this endpoint.")));
+            return;
+        }
+        // Get updated info
+        try {
+            String idToSearchFor = req.getParameter("id");
+            // Make sure the user exists
+            userService.getUserById(idToSearchFor);
+            ResourceCreationResponse responseBody = userService
+                    .updateUser(idToSearchFor, jsonMapper.readValue(req.getInputStream(), NewUserRequest.class));
+            resp.getWriter().write(jsonMapper.writeValueAsString(responseBody));
+        }  catch (ResourceNotFoundException e) {
+            resp.setStatus(404); // NOT FOUND; the sought resource could not be located
+            resp.getWriter().write(jsonMapper.writeValueAsString(new ErrorResponse(404, e.getMessage())));
+        }
+        catch (InvalidRequestException | JsonMappingException e) {
+            resp.setStatus(400);// * bad request
+            resp.getWriter().write(jsonMapper.writeValueAsString(new ErrorResponse(400, e.getMessage())));
+        } catch (AuthenticationException e) {
+            resp.setStatus(409); // * conflict; indicate that provided resource could not be saved
+            resp.getWriter().write(jsonMapper.writeValueAsString(new ErrorResponse(409, e.getMessage())));
+        } catch (DataSourceException e) {
+            resp.setStatus(500); // * internal error
             resp.getWriter().write(jsonMapper.writeValueAsString(new ErrorResponse(500, e.getMessage())));
         }
     }

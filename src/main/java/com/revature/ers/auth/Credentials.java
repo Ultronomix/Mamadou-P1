@@ -1,26 +1,24 @@
 package com.revature.ers.auth;
 
 public class Credentials {
-    private String userID;
+    private String username;
     private String password;
 
-    //make Jackson happy with default constructor
-    public Credentials(){
+    public Credentials() {
         super();
     }
 
-    public Credentials(String userIdA, String passwordA){
-        this.userID = userIdA;
-        this.password = passwordA;
-    }//end real constructor
-
-    //getters and setters
-    public String getUserID() {
-        return userID;
+    public Credentials(String username, String password) {
+        this.username = username;
+        this.password = password;
     }
 
-    public void setUserID(String userID) {
-        this.userID = userID;
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public String getPassword() {
@@ -31,4 +29,4 @@ public class Credentials {
         this.password = password;
     }
 
-}//end CredentialsDTO class
+}

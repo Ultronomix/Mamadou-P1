@@ -1,65 +1,65 @@
 package com.revature.ers.reimbursements;
 
-public class Reimbursements {
-    private String reimbID;
-    private double amount;
-    private String timeSub;
-    private String timeResolved;
+import java.io.Serializable;
+import java.util.Objects;
+
+
+public class Reimbursements implements Serializable{
+
+    private String reimbId;
+    private int amount;
+    private String submitted;
+    private String resolved;
     private String description;
-    private int creatorID;
-    private String resolverID;
-    private String statusID;
-    private String typeID;
+    private String paymentId;
+    private String authorId; // ? links to user_id
+    private String resolverId; // ? links to user_id
+    private ReimbursementStatus status; // ? links to reimbursement statuses
+    private ReimbursementType type; // ? links to reimbursement type
 
-
-    public Reimbursements(){
-        super();
+    public Reimbursements(Reimbursement subject) {
+        this.reimbId = subject.getReimbursementId();
+        this.amount = subject.getAmount();
+        this.submitted = subject.getSubmitted();
+        this.resolved = subject.getResolved();
+        this.description = subject.getDescription();
+        this.paymentId = subject.getPaymentId();
+        this.authorId = subject.getAuthorId();
+        this.resolverId = subject.getResolverId();
+        this.status = subject.getStatus();
+        this.type = subject.getType();
     }
 
-    public Reimbursements(Reimbursement reimbImport) {
-        this.reimbID = reimbImport.getReimbID();
-        this.amount = reimbImport.getAmount();
-        this.timeSub = reimbImport.getTimeSub();
-        this.timeResolved = reimbImport.getTimeResolved();
-        this.description = reimbImport.getDescription();
-        this.creatorID = reimbImport.getAuthorID();
-        this.resolverID = reimbImport.getResolverID();
-        this.statusID = reimbImport.getStatusID();
-        this.typeID = reimbImport.getTypeID();
-
+    public String getReimbId() {
+        return reimbId;
     }
 
-    //getters and setters
-    public String getReimbID() {
-        return reimbID;
+    public void setReimbId(String reimbId) {
+        this.reimbId = reimbId;
     }
 
-    public void setReimbID(String reimbID) {
-        this.reimbID = reimbID;
-    }
-
-    public double getAmount() {
+    public int getAmount() {
         return amount;
     }
 
-    public void setAmount(double amount) {
+    public void setAmount(int amount) {
         this.amount = amount;
     }
 
-    public String getTimeSub() {
-        return timeSub;
+    public String getSubmitted() {
+        return submitted;
     }
 
-    public void setTimeSub(String timeSub) {
-        this.timeSub = timeSub;
+    public void setSubmitted(String submitted) {
+        this.submitted = submitted;
     }
 
-    public String getTimeResolved() {
-        return timeResolved;
+    public String getResolved() {
+        return resolved;
     }
 
-    public void setTimeResolved(String timeResolved) {
-        this.timeResolved = timeResolved;
+    public void setResolved(String resolved) {
+        this.resolved = resolved;
     }
 
     public String getDescription() {
@@ -70,49 +70,76 @@ public class Reimbursements {
         this.description = description;
     }
 
-    public int getCreatorID() {
-        return creatorID;
+    public String getPaymentId() {
+        return paymentId;
     }
 
-    public void setCreatorID(int creatorID) {
-        this.creatorID = creatorID;
+    public void setPaymentId(String paymentId) {
+        this.paymentId = paymentId;
     }
 
-    public String getResolverID() {
-        return resolverID;
+    public String getAuthorId() {
+        return authorId;
     }
 
-    public void setResolverID(String resolverID) {
-        this.resolverID = resolverID;
+    public void setAuthorId(String authorId) {
+        this.authorId = authorId;
     }
 
-    public String getStatusID() {
-        return statusID;
+    public String getResolverId() {
+        return resolverId;
     }
 
-    public void setStatusID(String statusID) {
-        this.statusID = statusID;
+    public void setResolverId(String resolverId) {
+        this.resolverId = resolverId;
     }
 
-    public String getTypeID() {
-        return typeID;
+    public ReimbursementStatus getStatus() {
+        return status;
     }
 
-    public void setTypeID(String typeID) {
-        this.typeID = typeID;
+    public void setStatus(ReimbursementStatus status) {
+        this.status = status;
+    }
+
+    public ReimbursementType getType() {
+        return type;
+    }
+
+    public void setType(ReimbursementType type) {
+        this.type = type;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {return true;}
+        if (o == null ||getClass() != o.getClass()) {return false;}
+        Reimbursements reimbursements = (Reimbursements) o;
+        return Objects.equals(reimbId, reimbursements.reimbId) && Objects.equals(amount, reimbursements.amount)
+                && Objects.equals(submitted, reimbursements.submitted) && Objects.equals(resolved, reimbursements.resolved)
+                && Objects.equals(description, reimbursements.description) && Objects.equals(paymentId, reimbursements.paymentId)
+                && Objects.equals(authorId, reimbursements.authorId) && Objects.equals(resolverId, reimbursements.resolverId)
+                && Objects.equals(status, reimbursements.status) && Objects.equals(type, reimbursements.type);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(reimbId, amount, submitted, resolved, description, paymentId, authorId,
+                resolverId, status, type);
     }
 
     @Override
     public String toString() {
-        return "ReimbursementDTO{" +
-                "\nreimbID= " + reimbID +
-                ", \namount= " + amount +
-                ", \ntimeSub= " + timeSub +
-                ", \ntimeResolved= " + timeResolved +
-                ", \ndescription= " + description +
-                ", \nauthorID= " + creatorID +
-                ", \nresolverID= " + resolverID +
-                ", \nstatusID= " + statusID +
-                ", \ntypeID= " + typeID + '}';
+        return "Reimbursement {" +
+                "reimb_id = '" + reimbId + "' " +
+                "amount = '" + amount + "' " +
+                "submitted = '" + submitted + "' " +
+                "resolved = '" + resolved + "' " +
+                "description = '" + description + "' " +
+                "payment_id = '" + paymentId + "' " +
+                "author_id = '" + authorId + "' " +
+                "resolver_id = '" + resolverId + "' " +
+                "status = '" + status + "' " +
+                "type = '" + type + "'}";
     }
 }

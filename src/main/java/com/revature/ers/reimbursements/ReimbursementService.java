@@ -1,126 +1,56 @@
 package com.revature.ers.reimbursements;
 
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
+import com.revature.ers.common.ResourceCreationResponse;
+import com.revature.ers.common.exceptions.ResourceNotFoundException;
+
 import java.util.ArrayList;
 import java.util.List;
 
-import com.revature.ers.common.exceptions.InvalidRequestException;
+
 
 public class ReimbursementService {
+
     private final ReimbursementDAO reimbursementDAO;
 
     public ReimbursementService(ReimbursementDAO reimbursementDAO) {
         this.reimbursementDAO = reimbursementDAO;
     }
 
-    public Reimbursements generate(NewReimbursementRequest reimbImport) throws InvalidRequestException{
-
-
-        reimbImport.setTimeSub(Timestamp.valueOf(LocalDateTime.now()).toString());
-        reimbImport.setStatusID("1");
-
-        if(reimbImport == null){
-            throw new InvalidRequestException("ERROR");
-        }
-        if(reimbImport.getAmount() <= 0){
-            throw new InvalidRequestException("ERROR");
-        }
-        if(reimbImport.getDescription() == null || reimbImport.getDescription().length() <= 0 ){
-            throw new InvalidRequestException("ERROR");
-        }
-        if(reimbImport.getTypeID() == null || reimbImport.getTypeID().length() <= 0 ){
-            throw new InvalidRequestException("ERROR");
-        }
-
-        Reimbursement target = reimbursementDAO.create(reimbImport).orElse(null);
-        Reimbursements result = new Reimbursements(target);
-        return result;
-    }
-
-    public List<Reimbursements> getAllReimbs(String usernameImport){
+    public List<Reimbursements> getAllReimb() {
         List<Reimbursements> result = new ArrayList<>();
-        List<Reimbursement> reimbList = reimbursementDAO.getAll(usernameImport);
-        for(Reimbursement transfer : reimbList){
-            result.add(new Reimbursements(transfer));
-        }
+        List<Reimbursement> reimbursements = reimbursementDAO.getAllReimb();
 
+        for (Reimbursement reimbursement : reimbursements) {
+            result.add(new Reimbursements(reimbursement));
+        }
         return result;
     }
 
-    public List<Reimbursements> getAllPendingReimbs(String usernameImport){
-        List<Reimbursements> result = new ArrayList<>();
-        List<Reimbursement> reimbList = reimbursementDAO.getAllPending(usernameImport);
-        for(Reimbursement transfer : reimbList){
-            result.add(new Reimbursements(transfer));
+    public Reimbursements getReimbById(String id) {
+        if (id == null || id.trim().length() <= 0) {
+            throw new RuntimeException("A user's id must be provided");
         }
-
-        return result;
+        return reimbursementDAO.getReimbById(id).map(Reimbursements::new).orElseThrow(ResourceNotFoundException::new);
     }
 
-    public List<Reimbursements> getOwnedReimbs(String usernameImport){
-        List<Reimbursements> result = new ArrayList<>();
-        List<Reimbursement> reimbList = reimbursementDAO.getOwned(usernameImport);
-        for(Reimbursement transfer : reimbList){
-            result.add(new Reimbursements(transfer));
+    public ResourceCreationResponse approveDeny(String reimb_id, String resolver_id, String status) {
+        if (reimb_id == null || status == null || resolver_id == null) {
+            throw new RuntimeException("Provided request payload was null.");
         }
-
-        return result;
+        ReimbursementStatus reimb_status = Reimbursement.getStatusFromName(status);
+        // TODO: validate status
+        String newApproveDeny = reimbursementDAO.approveDeny(reimb_id, resolver_id, reimb_status);
+        return new ResourceCreationResponse(newApproveDeny);
     }
 
-    public List<Reimbursements> pendingReimb(String usernameImport){
-        List<Reimbursements> result = new ArrayList<>();
-        List<Reimbursement> reimbList = reimbursementDAO.getOwnedPending(usernameImport);
-        for(Reimbursement transfer : reimbList){
-            result.add(new Reimbursements(transfer));
+    public ResourceCreationResponse createReimb(NewReimbursementRequest newReimb) {
+        if (newReimb == null) {
+            throw new RuntimeException("Provided request payload was null.");
         }
+        // TODO: Check reimb criteria make sure the type exists
 
-        return result;
-    }
-
-    public Reimbursements getReimbs(int reimbIDImport){
-        if(reimbIDImport <= 0){
-            throw new InvalidRequestException(
-                    "ERROR");
-        }
-
-        try{
-            Reimbursement target = reimbursementDAO.getSingleByReimbID(reimbIDImport).orElse(null);
-            if (target == null){
-                throw new IllegalArgumentException("ERROR");
-            }
-
-            Reimbursements result = new Reimbursements(target);
-            return result;
-        }catch(IllegalArgumentException e){
-            throw new InvalidRequestException("ERROR");
-        }
-    }
-
-    public Reimbursements updateReimb(ReimbursementStatus alterationImport){
-        if(alterationImport == null){
-            throw new InvalidRequestException("ERROR");
-        }
-
-        try{
-            Reimbursement target = reimbursementDAO.getSingleByReimbID(alterationImport.getReimbID()).orElse(null);
-
-
-            if (target == null){
-                throw new InvalidRequestException("ERROR");
-            }else if (!target.getStatusID().equals("1")){
-                throw new InvalidRequestException("ERROR");
-            }else{
-                target = reimbursementDAO.updateReimbursementStatus(alterationImport.getReimbID(), alterationImport.getReimbStatus()).orElse(null);
-            }
-
-
-
-            Reimbursements result = new Reimbursements(target);
-            return result;
-        }catch(IllegalArgumentException e){
-            throw new InvalidRequestException("ERROR");
-        }
-
+        Reimbursement reimbursementToPersist = newReimb.extractEntity();
+        String newRiemb = reimbursementDAO.create(reimbursementToPersist);
+        return new ResourceCreationResponse(newRiemb);
     }
 }
